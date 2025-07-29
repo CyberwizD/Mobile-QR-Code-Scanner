@@ -30,6 +30,6 @@ def qr_scanner():
   components.html(qr_code_scanner, height=500)
 
   # Display the scanned result in Streamlit
-  st.markdown("### QR Result (you may need to copy it manually):")
+  st.markdown("### QR Result")
 
 # qr_result = st.empty()

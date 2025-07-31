@@ -345,7 +345,7 @@ android.allow_backup = True
 #p4a.setup_py = false
 
 # (str) extra command line arguments to pass when invoking pythonforandroid.toolchain
-#p4a.extra_args =
+p4a.extra_args = --extra-cflags=-fPIC --extra-ldflags= --ignore-setup-py --config-freetype --with-harfbuzz=no
 
 
 

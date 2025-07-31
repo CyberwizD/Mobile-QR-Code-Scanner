@@ -94,7 +94,7 @@ fullscreen = 0
 android.permissions = INTERNET,CAMERA
 android.api = 31
 android.minapi = 21
-android.ndk = 23b
+android.ndk = 25b
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host

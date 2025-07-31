@@ -1,3 +1,5 @@
+name: Android APK Build
+
 on:
   push:
     branches: [ main ]
@@ -5,43 +7,37 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup 32-bit Architecture and Install Dependencies
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt update
-          sudo apt install -y \
-            libncurses5:i386 \
-            libstdc++6:i386 \
-            libgtk2.0-0:i386 \
-            libpangoxft-1.0-0:i386 \
-            zlib1g:i386 \
-            libbz2-1.0:i386 \
-            unzip \
-            curl \
-            python3-pip \
-            git \
-            openjdk-17-jdk
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
 
-      - name: Install NDK r25b
+      - name: Install dependencies
         run: |
-          curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip android-ndk-r25b-linux.zip
-          mv android-ndk-r25b $HOME/android-ndk-r25b
-          echo "ANDROID_NDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
-          echo "ANDROIDNDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
+          python -m pip install --upgrade pip
+          pip install cython==0.29.36
+          pip install buildozer
+
+      - name: Cache buildozer/.buildozer
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
 
       - name: Build APK
-        uses: digreatbrian/buildozer-action@v2
-        with:
-          python-version: 3.8
-          buildozer-cmd: buildozer -v android debug
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip libncurses5
+          buildozer android debug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
-          path: ./bin/*.apk
+          name: kivy-apk
+          path: bin/*.apk

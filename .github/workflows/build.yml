@@ -1,31 +1,49 @@
+name: Build Kivy Android APK
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Install dependencies (NDK r25b)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+
+      - name: Install system dependencies
         run: |
           sudo apt update
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip python3-setuptools python3-wheel libffi-dev libssl-dev
+
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Download and Set Android NDK r25b
+        run: |
           curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip android-ndk-r25b-linux.zip
-          mv android-ndk-r25b $HOME/android-ndk-r25b
+          unzip android-ndk-r25b-linux.zip -d $HOME
           echo "ANDROID_NDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
           echo "ANDROIDNDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
 
+      - name: Initialize buildozer.spec
+        run: |
+          if [ ! -f buildozer.spec ]; then buildozer init; fi
+
       - name: Build APK
-        uses: digreatbrian/buildozer-action@v2
-        with:
-          python-version: 3.8
-          buildozer-cmd: buildozer -v android debug
+        run: buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: kivy-apk
           path: ./bin/*.apk

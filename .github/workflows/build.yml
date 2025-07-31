@@ -1,4 +1,4 @@
-name: Android APK Build
+name: Build Kivy Android App
 
 on:
   push:
@@ -9,35 +9,54 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.8"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install cython==0.29.36
-          pip install buildozer
-
-      - name: Cache buildozer/.buildozer
-        uses: actions/cache@v4
-        with:
-          path: |
-            .buildozer
-            ~/.buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
-
-      - name: Build APK
+      - name: Install base dependencies
         run: |
           sudo apt update
-          sudo apt install -y zip unzip libncurses5
+          sudo apt install -y \
+            build-essential \
+            ccache \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            python3-setuptools \
+            libncurses5 \
+            libstdc++6 \
+            zlib1g \
+            libbz2-1.0
+
+      - name: Install pip packages
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install buildozer cython
+
+      - name: Install Android SDK and accept licenses
+        run: |
+          mkdir -p ~/.android && touch ~/.android/repositories.cfg
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-33" "platform-tools" "build-tools;34.0.0"
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
+
+      - name: Build APK with Buildozer
+        run: |
           buildozer android debug
+        env:
+          ANDROID_HOME: $HOME/.buildozer/android/platform/android-sdk
+          PATH: $HOME/.buildozer/android/platform/android-sdk/platform-tools:$PATH
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: kivy-apk
-          path: bin/*.apk
+          path: ./bin/*.apk

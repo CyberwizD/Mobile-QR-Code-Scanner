@@ -15,12 +15,17 @@ android.ndk = 25b
 android.ndk_api = 21
 android.build_tools_version = 33.0.2
 android.allow_backup = 1
+android.permissions = CAMERA,INTERNET
 
 [buildozer]
 log_level = 2
 warn_on_root = 1
 
 [android]
-# Prevent freetype/hb build error (configure error)
+# Fixes for harfbuzz errors and AIDL issues
 p4a.branch = develop
 p4a.extra_args = --ignore-setup-py --with-harfbuzz=no
+# Optional: increase memory if builds are large
+android.gradle_daemon = True
+android.sdk_path = $HOME/.buildozer/android/platform/android-sdk
+android.ndk_path = $HOME/.buildozer/android/platform/android-ndk-r25b

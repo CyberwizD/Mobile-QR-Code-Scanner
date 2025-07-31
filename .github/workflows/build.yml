@@ -1,8 +1,8 @@
-name: Build Kivy Android APK
+name: Build APK
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
@@ -12,30 +12,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install dependencies and Android NDK r25b
+        run: |
+          sudo apt update
+          sudo apt install -y unzip curl
+          curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip -q android-ndk-r25b-linux.zip
+          mv android-ndk-r25b $HOME/android-ndk-r25b
+          echo "ANDROID_NDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
+          echo "ANDROIDNDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
 
-      - name: Install dependencies
+      - name: Install buildozer dependencies
         run: |
-          sudo apt update
-          sudo apt install -y zip unzip openjdk-17-jdk python3-pip \
-            python3-setuptools python3-wheel libffi-dev libssl-dev \
-            libjpeg-dev zlib1g-dev
+          sudo apt install -y \
+            build-essential ccache git libncurses5:i386 libstdc++6:i386 \
+            libgtk2.0-0:i386 libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 \
+            libidn11:i386 python3-pip openjdk-11-jdk zip unzip \
+            zlib1g-dev zlib1g:i386 libbz2-1.0:i386 libbz2-dev \
+            libncurses5-dev libtinfo5 xz-utils libtinfo-dev \
+            libffi-dev libssl-dev
 
-      - name: Install Buildozer and Cython
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython
+          python3 -m pip install --upgrade pip
+          pip install --user buildozer
 
-      - name: Initialize buildozer.spec
+      - name: Build APK with Buildozer
         run: |
-          if [ ! -f buildozer.spec ]; then buildozer init; fi
-
-      - name: Build APK
-        run: |
-          buildozer -v android debug
+          export PATH=$PATH:$HOME/.local/bin
+          buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

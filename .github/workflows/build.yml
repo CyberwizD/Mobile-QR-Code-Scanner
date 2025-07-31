@@ -1,5 +1,3 @@
-name: Build APK
-
 on:
   push:
     branches: [ main ]
@@ -7,47 +5,45 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install dependencies and Android NDK r25b
+      - name: Setup 32-bit Architecture and Install Dependencies
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt update
-          sudo apt install -y unzip curl
+          sudo apt install -y \
+            libncurses5:i386 \
+            libstdc++6:i386 \
+            libgtk2.0-0:i386 \
+            libpangox-1.0-0:i386 \
+            libpangoxft-1.0-0:i386 \
+            libidn11:i386 \
+            zlib1g:i386 \
+            libbz2-1.0:i386 \
+            unzip \
+            curl \
+            python3-pip \
+            git \
+            openjdk-17-jdk
+
+      - name: Install NDK r25b
+        run: |
           curl -LO https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip -q android-ndk-r25b-linux.zip
+          unzip android-ndk-r25b-linux.zip
           mv android-ndk-r25b $HOME/android-ndk-r25b
           echo "ANDROID_NDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$HOME/android-ndk-r25b" >> $GITHUB_ENV
           echo "ANDROIDNDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Build APK
+        uses: digreatbrian/buildozer-action@v2
         with:
           python-version: 3.8
-
-      - name: Install buildozer dependencies
-        run: |
-          sudo apt install -y \
-            build-essential ccache git libncurses5:i386 libstdc++6:i386 \
-            libgtk2.0-0:i386 libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 \
-            libidn11:i386 python3-pip openjdk-11-jdk zip unzip \
-            zlib1g-dev zlib1g:i386 libbz2-1.0:i386 libbz2-dev \
-            libncurses5-dev libtinfo5 xz-utils libtinfo-dev \
-            libffi-dev libssl-dev
-
-          python3 -m pip install --upgrade pip
-          pip install --user buildozer
-
-      - name: Build APK with Buildozer
-        run: |
-          export PATH=$PATH:$HOME/.local/bin
-          buildozer android debug
+          buildozer-cmd: buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kivy-apk
+          name: package
           path: ./bin/*.apk

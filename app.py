@@ -678,24 +678,35 @@ class QRScannerWidget(MDBoxLayout):
     
     def _scan_qr_codes(self):
         """
-        Mock QR scanning - in a real implementation, this method would use
-        the device's camera to capture and decode QR codes.
+        Use the device's camera to capture and decode QR codes.
         """
-        while self.scanning:
-            time.sleep(2)
-            # Simulate QR code detection
-            Clock.schedule_once(lambda dt: self._mock_qr_detected())
-            break
-    
-    def _mock_qr_detected(self):
-        """Mock QR code detection for demo"""
-        qr_data = {
-            "session_id": "mock-session-123",
-            "timestamp": datetime.now().isoformat(),
-            "expires_at": (datetime.now()).isoformat()
-        }
-        
-        self.process_qr_code(json.dumps(qr_data))
+        capture = None
+        try:
+            capture = cv2.VideoCapture(0)
+            if not capture.isOpened():
+                raise IOError("Cannot open webcam")
+
+            while self.scanning:
+                ret, frame = capture.read()
+                if not ret:
+                    time.sleep(0.1)
+                    continue
+
+                decoded_objects = pyzbar.decode(frame)
+                if decoded_objects:
+                    qr_data = decoded_objects[0].data.decode('utf-8')
+                    
+                    Clock.schedule_once(lambda dt: self.process_qr_code(qr_data))
+                    Clock.schedule_once(lambda dt: self.stop_scanning())
+                    break
+                
+                time.sleep(0.1)
+        except Exception as e:
+            Clock.schedule_once(lambda dt: self._show_error(f"Camera error: {str(e)}"))
+            Clock.schedule_once(lambda dt: self.stop_scanning())
+        finally:
+            if capture and capture.isOpened():
+                capture.release()
     
     def process_qr_code(self, qr_data_str):
         try:

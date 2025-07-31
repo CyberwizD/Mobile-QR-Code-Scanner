@@ -16,9 +16,7 @@ jobs:
             libncurses5:i386 \
             libstdc++6:i386 \
             libgtk2.0-0:i386 \
-            libpangox-1.0-0:i386 \
             libpangoxft-1.0-0:i386 \
-            libidn11:i386 \
             zlib1g:i386 \
             libbz2-1.0:i386 \
             unzip \

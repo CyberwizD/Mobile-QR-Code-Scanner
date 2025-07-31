@@ -20,7 +20,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential zip unzip openjdk-17-jdk python3-pip libgl1-mesa-dev
+          sudo apt install -y build-essential zip unzip openjdk-17-jdk python3-pip libgl1-mesa-dev git
 
       - name: Install Buildozer
         run: |

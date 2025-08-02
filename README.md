@@ -69,6 +69,20 @@
    npx react-native run-ios
    ```
 
+8. **Start the development server**
+   ```bash
+   npx expo start
+
+   # Run on specific platforms
+   npx expo start --android
+   npx expo start --ios
+   npx expo start --web
+
+   # Build for production
+   npx expo build:android
+   npx expo build:ios
+   ```
+
 ## Features Implemented
 
 ✅ **Splash Screen** with animated logo

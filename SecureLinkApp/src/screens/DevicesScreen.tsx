@@ -43,7 +43,7 @@ const DevicesScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       loadDevices();
-    }, [])
+    }, [token])
   );
 
   const onRefresh = () => {

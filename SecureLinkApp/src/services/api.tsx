@@ -22,21 +22,40 @@ interface Device {
 }
 
 class ApiService {
-  private async makeRequest(url: string, options: RequestInit = {}) {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+  private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}${url}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP ${response.status}`);
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          // If JSON parsing fails, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      }
+      
+      return response.text();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        throw new Error('Unable to connect to server. Please check your internet connection.');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   async login(username: string, password: string): Promise<LoginResponse> {
@@ -82,3 +101,4 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+export type { LoginResponse, Device };

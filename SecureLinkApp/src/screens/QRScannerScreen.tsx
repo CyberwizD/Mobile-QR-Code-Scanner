@@ -6,12 +6,13 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  Linking,
 } from 'react-native';
-import { Camera, CameraView } from 'expo-camera';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, Camera } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { apiService } from '@/services/api';
+import { apiService } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,34 +22,81 @@ const QRScannerScreen: React.FC = () => {
   const [status, setStatus] = useState('Ready to scan');
   const { token, showSnackbar } = useAuth();
 
-  useEffect(() => {
-    (async () => {
+  const requestCameraPermission = async () => {
+    try {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
+      console.log('Camera permission status:', status);
+      
+      if (status === 'granted') {
+        setHasPermission(true);
+      } else if (status === 'denied') {
+        setHasPermission(false);
+        Alert.alert(
+          'Camera Permission Required',
+          'This app needs camera access to scan QR codes. Please enable camera permissions in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+      } else {
+        setHasPermission(false);
+      }
+    } catch (error) {
+      console.error('Error requesting camera permission:', error);
+      setHasPermission(false);
+    }
+  };
+
+  useEffect(() => {
+    requestCameraPermission();
   }, []);
+
+  // Re-check permissions when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const checkPermissions = async () => {
+        const { status } = await Camera.getCameraPermissionsAsync();
+        setHasPermission(status === 'granted');
+      };
+      checkPermissions();
+    }, [])
+  );
 
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     if (!scanning) return;
 
+    setScanning(false); // Stop scanning immediately to prevent multiple scans
+    
     try {
+      console.log('QR Code scanned:', data);
+      setStatus('QR Code detected! Processing...');
+      
       const qrData = JSON.parse(data);
       const sessionId = qrData.session_id;
 
       if (sessionId) {
-        setStatus('QR Code detected! Processing...');
-        setScanning(false);
-        
         const response = await apiService.scanQR(sessionId, token!);
         showSnackbar('Device linked successfully! 🎉');
         setStatus('Device linked successfully!');
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          setStatus('Ready to scan');
+        }, 3000);
       } else {
-        throw new Error('Invalid QR code');
+        throw new Error('Invalid QR code format');
       }
     } catch (error: any) {
-      setStatus(`Error: ${error.message}`);
-      showSnackbar(error.message || 'Failed to process QR code');
-      setScanning(false);
+      console.error('QR scan error:', error);
+      const errorMessage = error.message || 'Failed to process QR code';
+      setStatus(`Error: ${errorMessage}`);
+      showSnackbar(errorMessage);
+      
+      // Reset after 3 seconds
+      setTimeout(() => {
+        setStatus('Ready to scan');
+      }, 3000);
     }
   };
 
@@ -64,25 +112,42 @@ const QRScannerScreen: React.FC = () => {
 
   if (hasPermission === null) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>Requesting camera permission...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>QR Code Scanner</Text>
+          <Text style={styles.instructions}>
+            Checking camera permissions...
+          </Text>
+        </View>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Requesting camera permission...</Text>
+        </View>
       </View>
     );
   }
 
   if (hasPermission === false) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>No access to camera</Text>
-        <TouchableOpacity
-          style={styles.permissionButton}
-          onPress={async () => {
-            const { status } = await Camera.requestCameraPermissionsAsync();
-            setHasPermission(status === 'granted');
-          }}
-        >
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>QR Code Scanner</Text>
+          <Text style={styles.instructions}>
+            Camera access is required to scan QR codes
+          </Text>
+        </View>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionIcon}>📷</Text>
+          <Text style={styles.permissionText}>No access to camera</Text>
+          <Text style={styles.permissionSubtext}>
+            Please grant camera permission to scan QR codes and link devices
+          </Text>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={requestCameraPermission}
+          >
+            <Text style={styles.permissionButtonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -102,7 +167,7 @@ const QRScannerScreen: React.FC = () => {
             style={styles.camera}
             onBarcodeScanned={scanning ? handleBarCodeScanned : undefined}
             barcodeScannerSettings={{
-              barcodeTypes: [BarCodeScanner.Constants.BarCodeType.qr],
+              barcodeTypes: ['qr'],
             }}
           >
             <View style={styles.scannerOverlay}>
@@ -253,18 +318,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
+    paddingHorizontal: 40,
+  },
+  permissionIcon: {
+    fontSize: 64,
+    marginBottom: 20,
   },
   permissionText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
+    fontSize: 18,
+    color: '#333',
+    fontWeight: '600',
+    marginBottom: 10,
     textAlign: 'center',
+  },
+  permissionSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 30,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   permissionButton: {
     backgroundColor: '#667eea',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   permissionButtonText: {
     color: 'white',

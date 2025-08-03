@@ -1,16 +1,18 @@
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
+import { AuthProvider } from '../context/AuthContext';
 
 // Screens
-import SplashScreen from '@/screens/SplashScreen';
-import LoginScreen from '@/screens/LoginScreen';
-import RegisterScreen from '@/screens/RegisterScreen';
-import HomeScreen from '@/screens/HomeScreen';
-import QRScannerScreen from '@/screens/QRScannerScreen';
-import DevicesScreen from '@/screens/DevicesScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
+import SplashScreen from '../screens/SplashScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import HomeScreen from '../screens/HomeScreen';
+import QRScannerScreen from '../screens/QRScannerScreen';
+import DevicesScreen from '../screens/DevicesScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -86,13 +88,24 @@ function AuthStack() {
   );
 }
 
-// Main Stack
-export default function AppNavigator() {
+// Main Stack Navigator
+function MainNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Auth" component={AuthStack} />
       <Stack.Screen name="Main" component={TabNavigator} />
     </Stack.Navigator>
+  );
+}
+
+// Root App Navigator with AuthProvider
+export default function AppNavigator() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <MainNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }

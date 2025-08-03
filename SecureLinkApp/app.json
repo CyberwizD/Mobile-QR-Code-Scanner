@@ -19,8 +19,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "This app needs access to camera to scan QR codes",
-        "NSMicrophoneUsageDescription": "This app needs access to microphone for camera functionality"
+        "NSCameraUsageDescription": "This app needs access to camera to scan QR codes for secure device linking."
       }
     },
     "android": {
@@ -30,8 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -52,12 +50,6 @@
       ],
       [
         "expo-camera",
-        {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
-        }
-      ],
-      [
-        "expo-barcode-scanner",
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
         }

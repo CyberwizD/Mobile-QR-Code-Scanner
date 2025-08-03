@@ -8,7 +8,6 @@ import {
   Alert,
 } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '@/services/api';
@@ -31,6 +30,13 @@ const QRScannerScreen: React.FC = () => {
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     if (!scanning) return;
 
+    if (!token) {
+      setStatus('Error: Not logged in');
+      showSnackbar('You must be logged in to scan a QR code');
+      setScanning(false);
+      return;
+    }
+
     try {
       const qrData = JSON.parse(data);
       const sessionId = qrData.session_id;
@@ -39,7 +45,7 @@ const QRScannerScreen: React.FC = () => {
         setStatus('QR Code detected! Processing...');
         setScanning(false);
         
-        const response = await apiService.scanQR(sessionId, token!);
+        const response = await apiService.scanQR(sessionId, token);
         showSnackbar('Device linked successfully! 🎉');
         setStatus('Device linked successfully!');
       } else {
@@ -102,7 +108,7 @@ const QRScannerScreen: React.FC = () => {
             style={styles.camera}
             onBarcodeScanned={scanning ? handleBarCodeScanned : undefined}
             barcodeScannerSettings={{
-              barcodeTypes: [BarCodeScanner.Constants.BarCodeType.qr],
+              barcodeTypes: ['qr'],
             }}
           >
             <View style={styles.scannerOverlay}>

@@ -8,7 +8,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { CameraView, Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
@@ -17,50 +17,18 @@ import { apiService } from '../services/api';
 const { width, height } = Dimensions.get('window');
 
 const QRScannerScreen: React.FC = () => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [status, setStatus] = useState('Ready to scan');
   const { token, showSnackbar } = useAuth();
 
-  const requestCameraPermission = async () => {
-    try {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      console.log('Camera permission status:', status);
-      
-      if (status === 'granted') {
-        setHasPermission(true);
-      } else if (status === 'denied') {
-        setHasPermission(false);
-        Alert.alert(
-          'Camera Permission Required',
-          'This app needs camera access to scan QR codes. Please enable camera permissions in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() }
-          ]
-        );
-      } else {
-        setHasPermission(false);
-      }
-    } catch (error) {
-      console.error('Error requesting camera permission:', error);
-      setHasPermission(false);
-    }
-  };
-
-  useEffect(() => {
-    requestCameraPermission();
-  }, []);
-
   // Re-check permissions when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      const checkPermissions = async () => {
-        const { status } = await Camera.getCameraPermissionsAsync();
-        setHasPermission(status === 'granted');
-      };
-      checkPermissions();
-    }, [])
+      if (permission?.granted) {
+        setStatus('Ready to scan');
+      }
+    }, [permission])
   );
 
   const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
@@ -110,7 +78,21 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
-  if (hasPermission === null) {
+  const handleRequestPermission = async () => {
+    const result = await requestPermission();
+    if (!result.granted) {
+      Alert.alert(
+        'Camera Permission Required',
+        'This app needs camera access to scan QR codes. Please enable camera permissions in your device settings.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() }
+        ]
+      );
+    }
+  };
+
+  if (!permission) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -120,13 +102,13 @@ const QRScannerScreen: React.FC = () => {
           </Text>
         </View>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Requesting camera permission...</Text>
+          <Text style={styles.permissionText}>Loading permissions...</Text>
         </View>
       </View>
     );
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -143,7 +125,7 @@ const QRScannerScreen: React.FC = () => {
           </Text>
           <TouchableOpacity
             style={styles.permissionButton}
-            onPress={requestCameraPermission}
+            onPress={handleRequestPermission}
           >
             <Text style={styles.permissionButtonText}>Grant Permission</Text>
           </TouchableOpacity>

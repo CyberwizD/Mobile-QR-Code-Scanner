@@ -36,7 +36,10 @@ class ApiService {
         let errorMessage = `HTTP ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message || errorMessage;
+          if (typeof errorData === 'object' && errorData !== null) {
+            const { detail, message } = errorData as { detail?: string; message?: string };
+            errorMessage = detail || message || errorMessage;
+          }
         } catch {
           // If JSON parsing fails, use the status text
           errorMessage = response.statusText || errorMessage;

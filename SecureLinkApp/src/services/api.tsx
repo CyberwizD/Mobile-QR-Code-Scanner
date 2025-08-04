@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://qr-auth-server.onrender.com';
 
 interface LoginResponse {
   access_token: string;

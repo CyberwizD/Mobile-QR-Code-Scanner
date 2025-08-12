@@ -11,6 +11,7 @@ import HomeScreen from '@/screens/HomeScreen';
 import QRScannerScreen from '@/screens/QRScannerScreen';
 import DevicesScreen from '@/screens/DevicesScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import ChatScreen from '@/screens/ChatScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -29,6 +30,8 @@ function TabNavigator() {
             iconName = 'qr-code-scanner';
           } else if (route.name === 'Devices') {
             iconName = 'devices';
+          } else if (route.name === 'Chat') {
+            iconName = 'chat';
           } else if (route.name === 'Profile') {
             iconName = 'person';
           } else {
@@ -66,6 +69,11 @@ function TabNavigator() {
         name="Devices" 
         component={DevicesScreen}
         options={{ tabBarLabel: 'Devices' }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={{ tabBarLabel: 'Chat' }}
       />
       <Tab.Screen 
         name="Profile" 

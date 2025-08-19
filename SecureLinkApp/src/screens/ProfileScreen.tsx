@@ -7,19 +7,26 @@ import {
   ScrollView,
   Alert,
   Modal,
+  TextInput,
+  Button
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
-  const { user, logout, showSnackbar } = useAuth();
+  const { user, logout, showSnackbar, updateUser, token } = useAuth();
   const [feedbackMessage, setFeedbackMessage] = useState<string>('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
 
   // Function to show feedback
   const showFeedback = (message: string) => {
@@ -65,8 +72,26 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   };
 
   const handleEditProfile = () => {
-    console.log('👤 EDIT PROFILE BUTTON PRESSED');
-    showFeedback('Edit Profile feature coming soon!');
+    setUsername(user?.username || '');
+    setEmail(user?.email || '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user || !token) {
+      Alert.alert('Error', 'You must be logged in to update your profile.');
+      return;
+    }
+
+    try {
+      const response = await apiService.updateProfile(token, { username, email });
+      updateUser(response.user, response.access_token);
+      setShowEditModal(false);
+      Alert.alert('Success', 'Profile updated successfully.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      Alert.alert('Error', `Failed to update profile: ${errorMessage}`);
+    }
   };
 
   const handleSecuritySettings = () => {
@@ -244,6 +269,52 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 onPress={confirmLogout}
               >
                 <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.editModalContainer}>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+            
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+            />
+            
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]} 
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]} 
+                onPress={handleUpdateProfile}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -451,12 +522,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
   },
+  editModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    marginHorizontal: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 25,
   },
   modalMessage: {
     fontSize: 16,
@@ -468,6 +550,7 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 10,
   },
   modalButton: {
     flex: 1,
@@ -483,6 +566,9 @@ const styles = StyleSheet.create({
   logoutModalButton: {
     backgroundColor: '#dc3545',
   },
+  saveButton: {
+    backgroundColor: '#667eea',
+  },
   cancelButtonText: {
     color: '#666',
     fontWeight: '600',
@@ -492,6 +578,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
     textAlign: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginBottom: 20,
+    borderRadius: 5,
+    fontSize: 16,
   },
 });
 

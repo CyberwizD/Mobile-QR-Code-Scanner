@@ -96,13 +96,13 @@ const DevicesScreen: React.FC = () => {
           </Text>
           <View style={[
             styles.statusBadge,
-            device.is_active ? styles.statusActive : styles.statusInactive
+            styles.statusActive
           ]}>
             <Text style={[
               styles.statusText,
-              device.is_active ? styles.statusActiveText : styles.statusInactiveText
+              styles.statusActiveText
             ]}>
-              {device.is_active ? '🟢 Active' : '🔴 Inactive'}
+              {'🟢 Active'}
             </Text>
           </View>
         </View>
@@ -115,15 +115,13 @@ const DevicesScreen: React.FC = () => {
         </Text>
       </View>
 
-      {device.is_active && (
-        <TouchableOpacity
-          style={styles.revokeButton}
-          onPress={() => revokeDevice(device.device_id, device.device_name)}
-        >
-          <MaterialIcons name="delete" size={20} color="white" />
-          <Text style={styles.revokeButtonText}>Revoke</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.revokeButton}
+        onPress={() => revokeDevice(device.device_id, device.device_name)}
+      >
+        <MaterialIcons name="delete" size={20} color="white" />
+        <Text style={styles.revokeButtonText}>Revoke</Text>
+      </TouchableOpacity>
     </View>
   );
 

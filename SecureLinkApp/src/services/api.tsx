@@ -1,4 +1,5 @@
 const API_BASE_URL = 'https://qr-auth-server.onrender.com';
+export const WS_BASE_URL = 'wss://qr-auth-server.onrender.com';
 
 interface LoginResponse {
   access_token: string;
@@ -99,6 +100,16 @@ class ApiService {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+  }
+
+  async updateProfile(token: string, data: { username: string; email: string }): Promise<LoginResponse> {
+    return this.makeRequest('/user/profile', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     });
   }
 }
